@@ -121,7 +121,7 @@ parameters:
   value: "examples/hello-shiny/Dockerfile"
 - name: PROBE_INITIAL_DELAY
   description: Initial delay in seconds for liveness and readiness probes
-  value: 30
+  value: "30"
 - name: PROBE_TIMEOUT
   description: Timeout in seconds for liveness and readiness probes
-  value: 30
+  value: "30"
