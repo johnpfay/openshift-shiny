@@ -102,6 +102,17 @@ objects:
       targetPort: 3838
     selector:
       app: "${APP_LABEL}"
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: "${APP_LABEL}"
+    name: "${APP_NAME}"
+  spec:
+    path: /
+    to:
+      kind: Service
+      name: "${APP_NAME}"
 
 parameters:
 - name: APP_NAME
