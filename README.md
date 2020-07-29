@@ -44,8 +44,7 @@ The following steps should be performed from the OpenShift console:
 - Update the parameters that are appropriate for your app. Minimally set APP_GIT_URI to your git repo location and REPO_DOCKERFILE_PATH to your dockerfile path location.
 - Click "Create"
 - Click "Applications" then "Deployments". Wait for your app to be deployed.
-- Click "Applications" then "Services". Select your new service and click "create route".
-- Navigate to your new route to view your app.
+- Click "Applications" then "Routes" click on the Hostname(URL) to view the website.
 
 ### Deploy your shiny app using the command line
 Create a project for your app.
@@ -61,6 +60,12 @@ oc process -f https://raw.githubusercontent.com/Duke-GCB/openshift-shiny/master/
    -p REPO_DOCKERFILE_PATH=<PATH_TO_DOCKERFILE_IN_YOUR_REPO> \
    | oc create -f -
 ```
+
+Determine the HOST for your app.
+```
+oc get route
+```
+The `HOST/PORT` column will show the URL for your app.
 
 The list of parameters for shiny-server.yaml are as follows:
 ```
