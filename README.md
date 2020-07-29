@@ -9,6 +9,7 @@ The Docker image tags match those of parent docker images from [rocker/shiny* im
 
 ## Prerequisites
 - Shiny R code stored in a git repository
+- OpenShift project
 
 ## Steps to Deploy your shiny app
 
@@ -36,7 +37,7 @@ The `install2.r` script is a simple utility to install R packages that is provid
 ### Deploy your shiny app using the OpenShift console
 In this step we will run an OpenShift template to deploy your shiny app.
 The following steps should be performed from the OpenShift console:
-- Create a new OpenShift project and select it
+- Select your OpenShift project
 - In the top right corner Click "Add To Project" then "Import YAML/JSON" - this will open up a "Import YAML/JSON" dialog
 - Copy the contents of [openshift/shiny-server.yaml](https://raw.githubusercontent.com/Duke-GCB/openshift-shiny/master/openshift/shiny-server.yaml) and paste it into the "Import YAML/JSON" dialog
 - Click "Create
@@ -49,7 +50,7 @@ The following steps should be performed from the OpenShift console:
 ### Deploy your shiny app using the command line
 Create a project for your app.
 ```
-oc new-project <your_project_name>
+oc project <your_project_name>
 ```
 
 Deploy your app.
