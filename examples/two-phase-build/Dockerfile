@@ -1,2 +1,2 @@
 FROM base-shiny-app
-ADD ./examples/hello-shiny/src /srv/code
+ADD ./examples/two-phase-build/src /srv/code
