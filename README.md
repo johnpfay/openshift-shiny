@@ -61,26 +61,3 @@ oc process -f https://raw.githubusercontent.com/Duke-GCB/openshift-shiny/master/
    -p REPO_DOCKERFILE_PATH=<PATH_TO_DOCKERFILE_IN_YOUR_REPO> \
    | oc create -f -
 ```
-
-Determine the HOST for your app.
-```
-oc get route
-```
-The `HOST/PORT` column will show the URL for your app.
-
-The list of parameters for shiny-server.yaml are as follows:
-```
-PARAMETER NAME         DESCRIPTION              DEFAULT VALUE
-================================================================================================
-APP_NAME               Name used for the app    shiny-app
-APP_LABEL              Label used for the app   shiny
-APP_GIT_URI            Deployment git uri       https://github.com/Duke-GCB/openshift-shiny.git
-APP_GIT_BRANCH         Deployment git branch    master
-REPO_DOCKERFILE_PATH   Deployment git branch    examples/hello-shiny/Dockerfile
-```
-
-If you just wish to try out the template use the default values to deploy the example hello-shiny app like so:
-```
-oc process -f https://raw.githubusercontent.com/Duke-GCB/openshift-shiny/master/openshift/shiny-server.yaml \
-    | oc create -f -
-```
