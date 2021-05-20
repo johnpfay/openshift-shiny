@@ -1,0 +1,154 @@
+---
+title: "Wrangle USGS"
+author: "John Fay"
+date: "Spring 2021"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+## Objectives
+- Compare water supply and usage rates (mgal/day) to demographic metrics (e.g. SVI)
+  - Compute rates for a given year (or yearly avgs) for each county
+    | FIPS | year | Metric | MGal per Day |
+
+- Compare water supply and usage changes over time to demographic metrics
+
+```{r Setup, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dataRetrieval)
+```
+
+
+#### 1. Read in the NWIS water usage data [later: via the API]
+```{r retrieve.usage.data}
+#From the dataRetrieval API
+df_use <- readNWISuse('NC','ALL',c(2000,2005,2010,2015),'ALL') %>%  # Read data for NC
+  mutate(FIPS = paste0(state_cd,county_cd), .before=1)  %>%         # Add FIPS column
+  select(-c(state_cd,state_name,county_cd,county_nm)) %>%           # Remove labels
+  replace(.=='-',0) %>%                                             # Convert missing values to zero
+  mutate_if(is.character,as.numeric) %>%                            # Convert data fields to numeric
+  mutate(year = as.factor(year),FIPS=as.factor(FIPS))               # Revert year & FIPS to factor
+
+```         
+   
+
+#### 2. Translate raw columns to accounting table categories
+```{r} 
+df_year <- df_use %>% 
+  group_by(year,FIPS) %>% 
+  summarize(#Public Water Supply withdrawals
+            WaterSupply.Surface.Fresh =  sum(Public.Supply.self.supplied.surface.water.withdrawals..fresh..in.Mgal.d),  #B7
+            WaterSupply.Surface.Saline = sum(Public.Supply.self.supplied.surface.water.withdrawals..saline..in.Mgal.d), #B8
+            WaterSupply.Surface.Total =  sum(Public.Supply.self.supplied.surface.water.withdrawals..fresh..in.Mgal.d,   #B5
+                                             Public.Supply.self.supplied.surface.water.withdrawals..saline..in.Mgal.d),
+            WaterSupply.Ground.Fresh =   sum(Public.Supply.self.supplied.groundwater.withdrawals..fresh..in.Mgal.d),    #B10
+            WaterSupply.Ground.Saline =  sum(Public.Supply.self.supplied.groundwater.withdrawals..saline..in.Mgal.d),   #B11
+            WaterSupply.Ground.Total =   sum(Public.Supply.self.supplied.groundwater.withdrawals..fresh..in.Mgal.d,     #B9
+                                             Public.Supply.self.supplied.groundwater.withdrawals..saline..in.Mgal.d),
+            WaterSupply.Total.Abstraction = sum(WaterSupply.Surface.Total, WaterSupply.Ground.Total),                   #B5
+            WaterSupply.Total.TotalUse = sum(WaterSupply.Surface.Total, WaterSupply.Ground.Total),                      #B16
+            WaterSupply.OtherUnits = 0, 
+            
+            #Sewage Treatment withdrawals (NOT USED)
+            
+            #Household withdrawals (wells)
+            Household.Surface.Fresh     = sum(Domestic.self.supplied.surface.water.withdrawals..fresh..in.Mgal.d),      #D7
+            Household.Surface.Saline    = sum(Domestic.self.supplied.surface.water.withdrawals..saline..in.Mgal.d),     #D8
+            Household.Ground.Fresh      = sum(Domestic.self.supplied.groundwater.withdrawals..fresh..in.Mgal.d),        #D10
+            Household.Ground.Saline     = sum(Domestic.self.supplied.groundwater.withdrawals..saline..in.Mgal.d),       #D11
+            Household.Total.Abstraction = sum(Household.Surface.Fresh,Household.Surface.Saline,                         #D5
+                                              Household.Ground.Fresh, Household.Ground.Saline),
+            Household.OtherUnts = sum(Domestic.total.self.supplied.withdrawals.plus.deliveries..in.Mgal.d -             #D13
+                                      Domestic.self.supplied.surface.water.withdrawals..fresh..in.Mgal.d - 
+                                      Domestic.self.supplied.surface.water.withdrawals..saline..in.Mgal.d -
+                                      Domestic.self.supplied.groundwater.withdrawals..fresh..in.Mgal.d - 
+                                      Domestic.self.supplied.groundwater.withdrawals..saline..in.Mgal.d),
+            Household.TotalUse = sum(Household.OtherUnts, Household.Total.Abstraction),                                 #D16
+            
+            #Irrigation
+            Irrigation.Crop.Total.Abstraction = sum(                                                                    #E5
+              Irrigation..Crop.self.supplied.surface.water.withdrawals.for.crops..fresh..in.Mgal.d,
+              Irrigation..Crop.self.supplied.groundwater.withdrawals.for.crops..fresh..in.Mgal.d),
+            Irrigation.Crop.TotalUse = Irrigation.Crop.Total.Abstraction,                                               #E16
+            Irrigation.Golf.Total.Abstraction = sum(
+              Irrigation..Golf.Courses.self.supplied.surface.water.withdrawals.for.golf.courses..fresh..in.Mgal.d,
+              Irrigation..Golf.Courses.self.supplied.groundwater.withdrawals.for.golf.courses..fresh..in.Mgal.d),
+            Irrigation.Golf.TotalUse = Irrigation.Golf.Total.Abstraction,
+            
+            #Animal production
+            Animal.Total.Abstraction = sum(
+              Livestock.self.supplied.surface.water.withdrawals..fresh..in.Mgal.d,
+              Livestock.self.supplied.groundwater.withdrawals..fresh..in.Mgal.d),
+            Animal.TotalUse = Animal.Total.Abstraction,
+            
+            #Aquaculture
+            Aquaculture.Total.Abstraction = sum(
+              Aquaculture.total.self.supplied.withdrawals..surface.water..in.Mgal.d,
+              Aquaculture.total.self.supplied.withdrawals..groundwater..in.Mgal.d
+            ),
+            Aquaculture.TotalUse = Aquaculture.Total.Abstraction,
+            
+            #Manufacturing
+            Manufacturing.Total.Abstraction = sum(
+              Industrial.total.self.supplied.withdrawals..surface.water..in.Mgal.d,
+              Industrial.total.self.supplied.withdrawals..groundwater..in.Mgal.d
+            ),
+            Manufacturing.TotalUse = Manufacturing.Total.Abstraction,
+            
+            #Mining
+            Mining.Total.Abstraction = sum(
+              Mining.total.self.supplied.withdrawals..surface.water..in.Mgal.d,
+              Mining.total.self.supplied.withdrawals..groundwater..in.Mgal.d
+            ),
+            Mining.TotalUse =  Mining.Total.Abstraction
+            
+            #Power
+            
+            #End summarize
+            ) 
+
+```
+
+
+#### 3. Read in the CDC SVI data
+```{r read.in.SVI.data}
+#Fetch in the raw data
+df_svi <- read_csv('https://svi.cdc.gov/Documents/Data/2018_SVI_Data/CSV/SVI2018_US_COUNTY.csv') %>% 
+  filter(ST == '37') %>% 
+  select(FIPS, starts_with("E_"))%>% 
+  mutate(FIPS = as.factor(FIPS))
+
+#Fetch the data dictionary
+data_dict <- read_csv("https://www.atsdr.cdc.gov/placeandhealth/svi/documentation/csv/SVIDocumentation_Table_DataDictionary_2018.csv") %>% 
+  select(`2018 VARIABLE NAME`, `2018 DESCRIPTION`) %>% 
+  filter(str_detect(`2018 VARIABLE NAME`, "\\bE")) 
+
+#Create lists of the SVI fields and their new name
+svi_fields <- colnames(select(df_svi,starts_with("E_"))) #colnames(df_svi)[-1]
+
+#Function to pull new name from old name in data dictionary
+update_name <- function(colName){
+  new_name <- data_dict %>% 
+    filter(`2018 VARIABLE NAME` == !!colName) %>% 
+    select(`2018 DESCRIPTION`)
+  new_name <- new_name[[1]]
+  return (new_name)}
+
+#Look up new names
+alt_names <- svi_fields %>% #data_dict$`2018 VARIABLE NAME` %>% 
+  map(update_name)
+
+#Rename fields in df_svi
+df_svi <- setnames(df_svi, old=svi_fields, new = unlist(alt_names))
+
+```
+
+
+```{r join.and.save}
+#Join the usage and svi tables on FIPS
+df_all <- left_join(df_year,df_svi,by=NULL)
+
+write_csv(df_all,'water_svi_data.csv')
+```
+
