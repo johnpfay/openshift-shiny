@@ -140,7 +140,10 @@ alt_names <- svi_fields %>% #data_dict$`2018 VARIABLE NAME` %>%
   map(update_name)
 
 #Rename fields in df_svi
-df_svi <- setnames(df_svi, old=svi_fields, new = unlist(alt_names))
+#df_svi <- setnames(df_svi, old=svi_fields, new = unlist(alt_names))
+
+data_dict2 <- data_dict %>% 
+  mutate(colpairs = c(`2018 VARIABLE NAME`,`2018 DESCRIPTION`))
 
 ```
 
