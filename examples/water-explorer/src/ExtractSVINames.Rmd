@@ -1,0 +1,67 @@
+---
+title: "ExtractSVInames"
+author: "John Fay"
+date: "5/19/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+library(purr)
+library(data.table)
+
+#import data
+the_data <- read_csv('water_data.csv') %>% 
+    mutate(FIPS = as_factor(FIPS),
+           year = as_factor(year)) 
+
+#Get field names
+water_fields <-  colnames(select(the_data,contains(".")))
+svi_fields <- colnames(select(the_data,starts_with("E")))
+
+#Fetch the data dictionary
+#"https://www.atsdr.cdc.gov/placeandhealth/svi/documentation/csv/SVIDocumentation_Table_DataDictionary_2018.csv"
+data_dict <- read_csv("SVIDocumentation_Table_DataDictionary_2018.csv") %>% 
+  select(`2018 VARIABLE NAME`, `2018 DESCRIPTION`) %>% 
+  filter(str_detect(`2018 VARIABLE NAME`, "\\bE"))
+
+```
+
+```{r translate.fields}
+#Rename column function
+update_name <- function(colName){
+  new_name <- data_dict %>% 
+    filter(`2018 VARIABLE NAME` == !!colName) %>% 
+    select(`2018 DESCRIPTION`)
+  new_name <- new_name[[1]]
+  return (new_name)
+}
+
+change_colname <- function(colName){
+  #Look up the new name
+  new_name <- data_dict %>% 
+    filter(`2018 VARIABLE NAME` == !!colName) %>% 
+    select(`2018 DESCRIPTION`)
+  new_name <- new_name[[1]]
+  cnames = c(colName = new_name)
+  
+  #Update the name in the other dataframe
+  the_data %>% rename(!!!cnames)
+}
+
+change_colname  <- function(df, new_colname){
+  df %>% rename(!!new_colname )
+}
+
+```
+
+```{r}
+items <- svi_fields %>% #data_dict$`2018 VARIABLE NAME` %>% 
+  map(update_name)
+
+the_data2 <- setnames(the_data, old=svi_fields, new = unlist(items))
+
+```
+
