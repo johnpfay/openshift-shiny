@@ -27,7 +27,7 @@ get_fldname <- function(the_desc){
         filter(desc == !!the_desc) %>%
         select(name)
     return (fld_name[[1]])
-}
+    }
 
 #Function to compute correlation
 #xCol <- 'WaterSupply.Surface.Fresh'
@@ -70,8 +70,7 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot"),
-           renderText("results")
+           plotOutput("distPlot")
         )
     ),
     helpText("©2021 - John.Fay@duke.edu")
@@ -79,13 +78,7 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-    #Compute the regression
-    the_model <- lm(pull(the_data,xCol) ~ pull(the_data,yCol))
-    the_report <- paste("y = ",
-                        format(the_model$coefficients[2],digits=4),
-                        " * x + ",
-                        format(the_model$coefficients[1],digits=4))
-    
+
     #Create and show the scatterplot
     output$distPlot <- renderPlot({
         #Translate SVI desc to name
