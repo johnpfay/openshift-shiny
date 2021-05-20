@@ -27,7 +27,16 @@ get_fldname <- function(the_desc){
         filter(desc == !!the_desc) %>%
         select(name)
     return (fld_name[[1]])
-    }
+}
+
+#Function to compute correlation
+#xCol <- 'WaterSupply.Surface.Fresh'
+#yCol <- 'Minority (all persons except white, non-Hispanic) estimate, 2014-2018 ACS'
+#the_model <- lm(pull(the_data,xCol) ~ pull(the_data,yCol))
+#the_report <- paste("y = ",
+#                    format(the_model$coefficients[2],digits=4),
+#                    " * x + ",
+#                    format(the_model$coefficients[1],digits=4))
 
 #svi_fields <- colnames(select(the_data,starts_with("E_")))
 
@@ -36,13 +45,14 @@ ui <- fluidPage(
 
     # Application title
     titlePanel("Water Explorer"),
+    helpText("Explore the relation between USGS Water Usage Data and CDC Social Vulnerability Index values across counties."),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
             checkboxGroupInput(
                 inputId = "YearSelect",
-                label = "Select the years",
+                label = "Select the year(s) to explore",
                 choices = unique(the_data$year),
                 selected = "2015"
             ),
@@ -60,13 +70,21 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+           plotOutput("distPlot"),
+           renderText("results")
         )
-    )
+    ),
+    helpText("©2021 - John.Fay@duke.edu")
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+    #Compute the regression
+    the_model <- lm(pull(the_data,xCol) ~ pull(the_data,yCol))
+    the_report <- paste("y = ",
+                        format(the_model$coefficients[2],digits=4),
+                        " * x + ",
+                        format(the_model$coefficients[1],digits=4))
     
     #Create and show the scatterplot
     output$distPlot <- renderPlot({
